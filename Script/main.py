@@ -14,6 +14,7 @@ if 'myWin' in globals():
 ##############
 myWin = cmds.window(title="Plant Distributions in Natural Scenes", menuBar=True)
 
+### Create new World ###
 cmds.frameLayout(collapsable=True, label="Create world")
 
 # Create a new Scene
@@ -31,6 +32,22 @@ cmds.button(label="Create New Terrain", command='create_plane()')
 
 # Delete selected object
 cmds.button(label="Delete Selected Object", command='cmds.delete()')
+
+cmds.setParent('..')
+cmds.setParent('..')
+
+### Set environment ###
+
+cmds.frameLayout(collapsable=True, label="Set environment")
+
+# user set environmental factors
+cmds.intSliderGrp('input_age', label="Age", field=True, min=1, max=100, value=50)
+cmds.intSliderGrp('input_temp', label="Temperature", field=True, min=-10, max=40, value=10)
+cmds.floatSliderGrp('input_sun', label="Sunlight", field=True, min=0, max=1, value=0.5)
+cmds.floatSliderGrp('input_soil', label="soil", field=True, min=0, max=1, value=0.5)
+
+# create environment
+cmds.button(label="Create Environment", command='create_environment')
 
 cmds.showWindow(myWin)
 
@@ -64,8 +81,21 @@ def create_plane():
     # Create a polygonal mesh
     global mesh_name
     mesh_name = "worldMesh"
-<<<<<<< HEAD
-    cmds.polyPlane(width=mesh_width, height=mesh_length, name=mesh_name)
+    cmds.polyPlane(sx=mesh_sub, sy=mesh_sub,  w=mesh_width, h=mesh_length, n=mesh_name)
+
+
+def create_environment():
+    global my_environment
+    age = cmds.intSliderGrp('input_age', query=True, value=True)
+    temp = cmds.intSliderGrp('input_temp', query=True, value=True)
+    sun = cmds.floatSliderGrp('input_sun', query=True, value=True)
+    soil = cmds.floatSliderGrp('input_soil', query=True, value=True)
+
+    my_environment = Environment(age, sun, temp, soil)
+    print(my_environment.age)
+    print(my_environment.sun)
+    print(my_environment.temp)
+    print(my_environment.soil)
 
 
 #Generic tree
@@ -92,28 +122,21 @@ class TreeInfo:
 
 
 class Tree:
-  def __init__(self, TreeInfo, treeList[], soilValue):
+  def __init__(self, tree_info, tree_list, soil_value):
     self.plantInfo = plantInfo
     self.plantArray = plantArray
     self.soilValue = soilValue
-
-
-
-=======
-    cmds.polyPlane(sx=mesh_sub, sy=mesh_sub,  w=mesh_width, h=mesh_length, n=mesh_name)
 
 ##################
 #    Classes     #
 ##################
 
-
 class Environment:
-    def __init__(self, age, sunlight, temperature):
+    def __init__(self, age, sunlight, temperature, soil):
         self.age = age
         self.sunlight = sunlight
         self.temperature = temperature
+        self.soil = soil # fix soil value based on map
 
     def update(self):
         print('Add TimeElement to update'.format(self.name))
->>>>>>> cc65de5c674ad615df2841467845b08c70d1b04f
-
