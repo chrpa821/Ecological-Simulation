@@ -40,13 +40,17 @@ cmds.setParent('..')
 cmds.frameLayout(collapsable=True, label="Set environment")
 
 # user set environmental factors
+cmds.intSliderGrp('input_seeds', label="Amount of Seeds", field=True, min=1, max=50, value=20)
 cmds.intSliderGrp('input_age', label="Age", field=True, min=1, max=100, value=50)
 cmds.intSliderGrp('input_temp', label="Temperature", field=True, min=-10, max=40, value=10)
-cmds.floatSliderGrp('input_', label="light", field=True, min=0, max=1, value=0.5)
-cmds.floatSliderGrp('input_soil', label="soil", field=True, min=0, max=1, value=0.5)
+cmds.floatSliderGrp('input_sun', label="Sunlight", field=True, min=0, max=1, value=0.5)
+cmds.floatSliderGrp('input_soil', label="Soil", field=True, min=0, max=1, value=0.5)
 
 # create environment
-cmds.button(label="Create Environment", command='create_environment')
+cmds.button(label="Create Environment", command='create_environment()')
+
+# increments age
+cmds.button(label="Increment Environment Age", command='Trees.increment_age(Trees.tree_list)')
 
 cmds.showWindow(myWin)
 
@@ -59,6 +63,7 @@ mesh_name = ""
 mesh_width = 0
 mesh_length = 0
 mesh_sub = 0
+initial_seeds = 20
 
 ##################
 #    Functions   #
@@ -85,9 +90,11 @@ def create_plane():
 
 def create_environment():
     global my_environment
+    global initial_seeds
+    initial_seeds = cmds.intSliderGrp('input_seeds', query=True, value=True)
     age = cmds.intSliderGrp('input_age', query=True, value=True)
     temp = cmds.intSliderGrp('input_temp', query=True, value=True)
-    sun = cmds.floatSliderGrp('input_', query=True, value=True)
+    sun = cmds.floatSliderGrp('input_sun', query=True, value=True)
     soil = cmds.floatSliderGrp('input_soil', query=True, value=True)
 
     my_environment = Environment(age, sun, temp, soil)
@@ -95,6 +102,11 @@ def create_environment():
     print(my_environment.sun)
     print(my_environment.temp)
     print(my_environment.soil)
+
+
+##################
+#    Classes     #
+##################
 
 
 #Generic tree
@@ -120,7 +132,6 @@ class TreeInfo:
         self.spacePreferred = 0.2
         self.spaceLower = 0.0
         self.spaceUpper = 0.3
-
 
 
     def update_fitness(self):
@@ -197,15 +208,36 @@ class TreeInfo:
         else:
             return 0
 
-class Tree:
-  def __init__(self, tree_info, tree_list, soil_value):
-    self.tree_info = tree_info
-    self.tree_list = tree_list
-    self.soil_value = soil_value
 
-##################
-#    Classes     #
-##################
+class Trees:
+    def __init__(self, tree_info, tree_list, soil_value):
+        self.tree_info = tree_info
+        self.tree_list = tree_list
+        self.soil_value = soil_value
+
+
+    def increment_age(self, tree_list):
+        for plants in tree_list:
+            # Fitness (f = 1.0)
+            # Energy (e = 1.0)
+            # Increment age (a) every t seconds
+            # Check fitness (f) in each cycle
+            # If f = 0, reduce energy (e) by energy loss (l)
+            # If e = 0, plant dies
+            # If probability (p < 0.5), reproduce offspring
+            # Reproduction based on fitness:
+            # Scatter number of seeds (s * f)
+            # at distance (d) around the parent
+            plants.age += 1
+            if plants.fitness == 0:
+                plants.energy -= 0.1  # energy loss = 0.1
+            if plants.energy == 0:
+                # plant dies
+
+            if random.uniform(0, 1) < 0.5:
+                # reproduce offspring
+                # scatter seeds (plants.seeds*plants.fitness) at distance d around plant
+
 
 class Environment:
     def __init__(self, age, light, temperature, soil):
@@ -218,27 +250,7 @@ class Environment:
         print('Add TimeElement to update'.format(self.name))
 
 
-def increment_age(tree_list):
 
-    for plants in tree_list:
-        # Fitness (f = 1.0)
-        # Energy (e = 1.0)
-        # Increment age (a) every t seconds
-        # Check fitness (f) in each cycle
-        # If f = 0, reduce energy (e) by energy loss (l)
-        # If e = 0, plant dies
-        # If probability (p < 0.5), reproduce offspring
-        # Reproduction based on fitness:
-        # Scatter number of seeds (s * f)
-        # at distance (d) around the parent
-        plants.age += 1
-        if plants.fitness == 0:
-            plants.energy -= 0.1 #energy loss = 0.1
-        if plants.energy == 0:
-            #plant dies
-        if random.uniform(0,1) < 0.5:
-            #reprodce offspring
-            #scatter seeds plants.seeds*plants.fitness at distance d around plant
 
 
 
