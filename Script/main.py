@@ -87,12 +87,12 @@ def create_environment():
     global my_environment
     age = cmds.intSliderGrp('input_age', query=True, value=True)
     temp = cmds.intSliderGrp('input_temp', query=True, value=True)
-     = cmds.floatSliderGrp('input_', query=True, value=True)
+    sun = cmds.floatSliderGrp('input_', query=True, value=True)
     soil = cmds.floatSliderGrp('input_soil', query=True, value=True)
 
-    my_environment = Environment(age, , temp, soil)
+    my_environment = Environment(age, sun, temp, soil)
     print(my_environment.age)
-    print(my_environment.)
+    print(my_environment.sun)
     print(my_environment.temp)
     print(my_environment.soil)
 
@@ -234,9 +234,9 @@ def increment_age(tree_list):
         plants.age += 1
         if plants.fitness == 0:
             plants.energy -= 0.1 #energy loss = 0.1
-        if plants.energy == 0
+        if plants.energy == 0:
             #plant dies
-        if (random.uniform(0,1) < 0.5)
+        if random.uniform(0,1) < 0.5:
             #reprodce offspring
             #scatter seeds plants.seeds*plants.fitness at distance d around plant
 
