@@ -3,6 +3,7 @@ import maya.cmds as cmds
 import random
 import math
 import maya.OpenMaya as OpenMaya
+import MASH.api as mapi
 
 # Remove old UI
 if 'myWin' in globals():
@@ -38,7 +39,7 @@ cmds.setParent('..')
 
 ### Set environment ###
 
-cmds.frameLayout(collapsable=True, label="Set environment")
+cmds.frameLayout(collapsable=True, label="Create Environment")
 
 # user set environmental factors
 cmds.intSliderGrp('input_age', label="Age", field=True, min=1, max=100, value=50)
@@ -47,7 +48,16 @@ cmds.floatSliderGrp('input_sun', label="Sunlight", field=True, min=0, max=1, val
 cmds.floatSliderGrp('input_soil', label="soil", field=True, min=0, max=1, value=0.5)
 
 # create environment
-cmds.button(label="Create Environment", command='create_environment')
+cmds.button(label="Create Environment", command='create_environment()')
+
+### Placement of plants  ###
+
+cmds.setParent('..')
+
+cmds.frameLayout(collapsable=True, label="Placement of Plants")
+
+# Place plants
+cmds.button(label="Place plants", command='place_plants()')
 
 cmds.showWindow(myWin)
 
@@ -85,18 +95,31 @@ def create_plane():
 
 
 def create_environment():
-    global my_environment
+    global my_environment # Fix
     age = cmds.intSliderGrp('input_age', query=True, value=True)
     temp = cmds.intSliderGrp('input_temp', query=True, value=True)
     sun = cmds.floatSliderGrp('input_sun', query=True, value=True)
     soil = cmds.floatSliderGrp('input_soil', query=True, value=True)
 
     my_environment = Environment(age, sun, temp, soil)
+    print("my environment values")
     print(my_environment.age)
-    print(my_environment.sun)
-    print(my_environment.temp)
+    print(my_environment.sunlight)
+    print(my_environment.temperature)
     print(my_environment.soil)
 
+def place_plants():
+    cmds.polyCube()
+
+    # create a new MASH network
+    mashNetwork = mapi.Network()
+    mashNetwork.createNetwork(name="PlantNetwork")
+
+    # What to distribute on
+    mashNetwork.meshDistribute(mesh_name)
+
+    # set the point count of the network
+    mashNetwork.setPointCount(1000)
 
 #Generic tree
 class TreeInfo:
