@@ -30,6 +30,9 @@ cmds.intSliderGrp('input_sub', label="Number of Subdivisions", field=True, min=5
 # Create new terrain
 cmds.button(label="Create New Terrain", command='create_plane()')
 
+# Edit terrain
+cmds.button(label="Edit Mesh With Tool", command='select_mesh_tool()')
+
 # Delete selected object
 cmds.button(label="Delete Selected Object", command='cmds.delete()')
 
@@ -85,6 +88,11 @@ def new_scene():
     cmds.file(force=True, new=True)
 
 
+def select_mesh_tool():
+    cmds.SetMeshGrabTool()
+    cmds.select(mesh_name, replace=True)
+
+
 def create_plane():
     global mesh_width
     mesh_width = cmds.intSliderGrp('input_width', query=True, value=True)
@@ -127,6 +135,7 @@ def place_plants():
 
     # set the point count of the network
     mashNetwork.setPointCount(1000)
+
 
 ##################
 #    Classes     #
