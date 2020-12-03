@@ -144,7 +144,7 @@ def place_objects():
     pointList = []
 
     for i in range(inMeshMPointArray.length()):
-        cmds.polyCube()
+
         pointList.append([inMeshMPointArray[i][0], inMeshMPointArray[i][1], inMeshMPointArray[i][2]])
 
     for x in range(10):
