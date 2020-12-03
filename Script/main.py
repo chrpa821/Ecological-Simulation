@@ -1,7 +1,6 @@
 # Import libraries
 import maya.cmds as cmds
 import random
-import math
 import maya.OpenMaya as OpenMaya
 
 # Remove old UI
@@ -30,6 +29,9 @@ cmds.intSliderGrp('input_sub', label="Number of Subdivisions", field=True, min=5
 # Create new terrain
 cmds.button(label="Create New Terrain", command='create_plane()')
 
+# Edit terrain
+cmds.button(label="Edit Mesh With Tool", command='select_mesh_tool()')
+
 # Delete selected object
 cmds.button(label="Delete Selected Object", command='cmds.delete()')
 
@@ -38,7 +40,7 @@ cmds.setParent('..')
 
 ### Set environment ###
 
-cmds.frameLayout(collapsable=True, label="Set environment")
+cmds.frameLayout(collapsable=True, label="Create Environment")
 
 # user set environmental factors
 cmds.intSliderGrp('input_seeds', label="Amount of Seeds", field=True, min=1, max=50, value=20)
@@ -50,10 +52,17 @@ cmds.floatSliderGrp('input_soil', label="Soil", field=True, min=0, max=1, value=
 # create environment
 cmds.button(label="Create Environment", command='create_environment()')
 
+
+### Placement of plants  ###
+
+cmds.setParent('..')
+
+cmds.frameLayout(collapsable=True, label="Placement of Plants")
+
 # increments age
 cmds.button(label="Increment Environment Age", command='Trees.increment_age(Trees.tree_list)')
 
-# sample Area
+# place objects
 cmds.button(label="Place Objects", command='place_objects()')
 
 cmds.showWindow(myWin)
@@ -78,6 +87,11 @@ def new_scene():
     cmds.file(force=True, new=True)
 
 
+def select_mesh_tool():
+    cmds.SetMeshGrabTool()
+    cmds.select(mesh_name, replace=True)
+
+
 def create_plane():
     global mesh_width
     mesh_width = cmds.intSliderGrp('input_width', query=True, value=True)
@@ -93,7 +107,6 @@ def create_plane():
 
 
 def create_environment():
-    global my_environment
     global initial_seeds
     initial_seeds = cmds.intSliderGrp('input_seeds', query=True, value=True)
     age = cmds.intSliderGrp('input_age', query=True, value=True)
@@ -101,10 +114,12 @@ def create_environment():
     sun = cmds.floatSliderGrp('input_sun', query=True, value=True)
     soil = cmds.floatSliderGrp('input_soil', query=True, value=True)
 
+    global my_environment # Fix
     my_environment = Environment(age, sun, temp, soil)
+    print("my environment values")
     print(my_environment.age)
-    print(my_environment.sun)
-    print(my_environment.temp)
+    print(my_environment.sunlight)
+    print(my_environment.temperature)
     print(my_environment.soil)
 
 
@@ -274,7 +289,6 @@ class Trees:
     #         if random.uniform(0, 1) < 0.5:
     #             # reproduce offspring
     #             # scatter seeds (plants.seeds*plants.fitness) at distance d around plant
-
 
 class Environment:
     def __init__(self, age, light, temperature, soil):
