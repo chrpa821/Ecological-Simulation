@@ -2,6 +2,7 @@
 import maya.cmds as cmds
 import random
 import math
+import maya.OpenMaya as OpenMaya
 
 # Remove old UI
 if 'myWin' in globals():
@@ -52,6 +53,9 @@ cmds.button(label="Create Environment", command='create_environment()')
 # increments age
 cmds.button(label="Increment Environment Age", command='Trees.increment_age(Trees.tree_list)')
 
+# sample Area
+cmds.button(label="Place Objects", command='place_objects()')
+
 cmds.showWindow(myWin)
 
 ##############
@@ -64,11 +68,11 @@ mesh_width = 0
 mesh_length = 0
 mesh_sub = 0
 initial_seeds = 20
+tree_list = []
 
 ##################
 #    Functions   #
 ##################
-
 
 def new_scene():
     cmds.file(force=True, new=True)
@@ -104,6 +108,36 @@ def create_environment():
     print(my_environment.soil)
 
 
+def place_objects():
+    # get the active selection
+    selection = OpenMaya.MSelectionList()
+    OpenMaya.MGlobal.getActiveSelectionList(selection)
+    iterSel = OpenMaya.MItSelectionList(selection, OpenMaya.MFn.kMesh)
+
+    # get dagPath
+    dagPath = OpenMaya.MDagPath()
+    iterSel.getDagPath(dagPath)
+
+    # create empty point array
+    inMeshMPointArray = OpenMaya.MPointArray()
+
+    # create function set and get points in world space
+    currentInMeshMFnMesh = OpenMaya.MFnMesh(dagPath)
+    currentInMeshMFnMesh.getPoints(inMeshMPointArray, OpenMaya.MSpace.kWorld)
+
+    # put each point to a list
+    pointList = []
+
+    for i in range(inMeshMPointArray.length()):
+        cmds.polyCube()
+        pointList.append([inMeshMPointArray[i][0], inMeshMPointArray[i][1], inMeshMPointArray[i][2]])
+
+    for x in range(10):
+        place = pointList[random.randint(0, len(pointList))]
+        cmds.polyCube()
+        cmds.move(place[0], place[1], place[2])
+
+
 ##################
 #    Classes     #
 ##################
@@ -135,7 +169,7 @@ class TreeInfo:
 
 
     def update_fitness(self):
-        self.fitness = self.compute_soil_adaptability() * self.compute_sun_adaptability() * self.compute_temperature_adaptability()
+        self.fitness = self.compute_soil_adaptability() * self.compute_sun_adaptability() * self.compute_temp_adaptability()
 
 
     def compute_soil_adaptability(self):
@@ -185,7 +219,7 @@ class TreeInfo:
             return 0
 
 
-    def compute_temperature_adaptability(self):
+    def compute_temp_adaptability(self):
         if self.temperaturePreferred - 0.5 * (
         abs(self.temperaturePreferred - self.temperatureLower)) <= my_environment.sun <= self.temperaturePreferred + 0.5 * (
         abs(self.temperaturePreferred - self.temperatureUpper)):
@@ -209,34 +243,37 @@ class TreeInfo:
             return 0
 
 
+
+
 class Trees:
+    
     def __init__(self, tree_info, tree_list, soil_value):
         self.tree_info = tree_info
         self.tree_list = tree_list
         self.soil_value = soil_value
 
-
-    def increment_age(self, tree_list):
-        for plants in tree_list:
-            # Fitness (f = 1.0)
-            # Energy (e = 1.0)
-            # Increment age (a) every t seconds
-            # Check fitness (f) in each cycle
-            # If f = 0, reduce energy (e) by energy loss (l)
-            # If e = 0, plant dies
-            # If probability (p < 0.5), reproduce offspring
-            # Reproduction based on fitness:
-            # Scatter number of seeds (s * f)
-            # at distance (d) around the parent
-            plants.age += 1
-            if plants.fitness == 0:
-                plants.energy -= 0.1  # energy loss = 0.1
-            if plants.energy == 0:
-                # plant dies
-
-            if random.uniform(0, 1) < 0.5:
-                # reproduce offspring
-                # scatter seeds (plants.seeds*plants.fitness) at distance d around plant
+    #
+    # def increment_age(self, tree_list):
+    #     for plants in tree_list:
+    #         # Fitness (f = 1.0)
+    #         # Energy (e = 1.0)
+    #         # Increment age (a) every t seconds
+    #         # Check fitness (f) in each cycle
+    #         # If f = 0, reduce energy (e) by energy loss (l)
+    #         # If e = 0, plant dies
+    #         # If probability (p < 0.5), reproduce offspring
+    #         # Reproduction based on fitness:
+    #         # Scatter number of seeds (s * f)
+    #         # at distance (d) around the parent
+    #         plants.age += 1
+    #         if plants.fitness == 0:
+    #             plants.energy -= 0.1  # energy loss = 0.1
+    #         if plants.energy == 0:
+    #             # plant dies
+    #
+    #         if random.uniform(0, 1) < 0.5:
+    #             # reproduce offspring
+    #             # scatter seeds (plants.seeds*plants.fitness) at distance d around plant
 
 
 class Environment:
@@ -248,9 +285,4 @@ class Environment:
 
     def update(self):
         print('Add TimeElement to update'.format(self.name))
-
-
-
-
-
 
