@@ -110,8 +110,7 @@ def create_plane():
 
 
 def create_environment():
-    global initial_seeds
-    initial_seeds = cmds.intSliderGrp('input_seeds', query=True, value=True)
+
     age = cmds.intSliderGrp('input_age', query=True, value=True)
     temp = cmds.intSliderGrp('input_temp', query=True, value=True)
     sun = cmds.floatSliderGrp('input_sun', query=True, value=True)
@@ -160,7 +159,10 @@ def place_objects():
     # we're comparing with up
     comparisonVector = OpenMaya.MVector(0, 1, 0)
 
-    for x in range(500):
+    global initial_seeds
+    initial_seeds = cmds.intSliderGrp('input_seeds', query=True, value=True)
+
+    for x in range(initial_seeds):
         place = random.randint(0, number_of_faces)
         face = pm.MeshFace("{}.f[{}]".format(mesh_name, place))
 
@@ -177,7 +179,7 @@ def place_objects():
 
         # the angle is in degrees so the result is
         # "if the difference between this normal and 'up' is more then 20 degrees, turn the point off"
-        if deltaAngle > 10:
+        if abs(deltaAngle) > 10:
             continue
 
         # Get center of face
