@@ -189,7 +189,8 @@ def place_objects():
         print(centerPoint)
 
         # add cube to center of face
-        cmds.polyCube()
+        cmds.select("birch:birch1")
+        cmds.instance("birch:birch1")
         cmds.move(centerPoint[0], centerPoint[1], centerPoint[2])
 
 
