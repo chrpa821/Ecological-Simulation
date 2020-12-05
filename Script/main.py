@@ -2,6 +2,9 @@
 import maya.cmds as cmds
 import random
 import maya.OpenMaya as OpenMaya
+import pymel.core as pm
+import math
+import re
 
 # Remove old UI
 if 'myWin' in globals():
@@ -140,17 +143,52 @@ def place_objects():
     currentInMeshMFnMesh = OpenMaya.MFnMesh(dagPath)
     currentInMeshMFnMesh.getPoints(inMeshMPointArray, OpenMaya.MSpace.kWorld)
 
-    # put each point to a list
-    pointList = []
+    face = 1
+    my_face = "{}.f[{}]".format(mesh_name,face)
+    cmds.select(my_face)
+    print(cmds.polyInfo( fn=True ))
 
-    for i in range(inMeshMPointArray.length()):
+    face = pm.MeshFace("{}.f[{}]".format(mesh_name,face))
+    pt = face.__apimfn__().center(OpenMaya.MSpace.kWorld)
+    centerPoint = pm.datatypes.Point(pt)
+    print(centerPoint)
 
-        pointList.append([inMeshMPointArray[i][0], inMeshMPointArray[i][1], inMeshMPointArray[i][2]])
+    cmds.select(mesh_name)
+    number_of_faces = cmds.polyEvaluate(f=True)
+    print(number_of_faces)
 
-    for x in range(10):
-        place = pointList[random.randint(0, len(pointList))]
+    # we're comparing with up
+    comparisonVector = OpenMaya.MVector(0, 1, 0)
+
+    for x in range(500):
+        place = random.randint(0, number_of_faces)
+        face = pm.MeshFace("{}.f[{}]".format(mesh_name, place))
+
+        # check normal of face
+        pm.select(face)
+        polyInfo = pm.polyInfo(fn=True)
+        polyInfoArray = re.findall(r"[\w.-]+", polyInfo[0])  # convert the string to array with regular expression
+        polyInfoX = float(polyInfoArray[2])
+        polyInfoY = float(polyInfoArray[3])
+        polyInfoZ = float(polyInfoArray[4])
+        face_normal = OpenMaya.MVector(polyInfoX, polyInfoY, polyInfoX)
+
+        deltaAngle = math.degrees(face_normal.angle(comparisonVector))
+
+        # the angle is in degrees so the result is
+        # "if the difference between this normal and 'up' is more then 20 degrees, turn the point off"
+        if deltaAngle > 10:
+            continue
+
+        # Get center of face
+        pt = face.__apimfn__().center(OpenMaya.MSpace.kWorld)
+        centerPoint = pm.datatypes.Point(pt)
+
+        print(centerPoint)
+
+        # add cube to center of face
         cmds.polyCube()
-        cmds.move(place[0], place[1], place[2])
+        cmds.move(centerPoint[0], centerPoint[1], centerPoint[2])
 
 
 ##################
