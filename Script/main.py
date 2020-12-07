@@ -46,6 +46,8 @@ cmds.setParent('..')
 cmds.frameLayout(collapsable=True, label="Create Environment")
 
 # user set environmental factors
+cmds.text( label='Plant Mesh name (full name):' )
+plant_name = cmds.textField()
 cmds.intSliderGrp('input_seeds', label="Amount of Seeds", field=True, min=1, max=50, value=20)
 cmds.intSliderGrp('input_age', label="Age", field=True, min=1, max=100, value=50)
 cmds.intSliderGrp('input_temp', label="Temperature", field=True, min=-10, max=40, value=38)
@@ -88,7 +90,7 @@ def new_scene():
 
 
 def select_mesh_tool():
-    cmds.SetMeshGrabTool()
+    cmds.SetMeshSculptTool()
     cmds.select(mesh_name, replace=True)
 
 
@@ -153,21 +155,6 @@ def increment_age(trees):
 
 
 def place_objects():
-    # get the active selection
-    selection = OpenMaya.MSelectionList()
-    OpenMaya.MGlobal.getActiveSelectionList(selection)
-    iterSel = OpenMaya.MItSelectionList(selection, OpenMaya.MFn.kMesh)
-
-    # get dagPath
-    dagPath = OpenMaya.MDagPath()
-    iterSel.getDagPath(dagPath)
-
-    # create empty point array
-    inMeshMPointArray = OpenMaya.MPointArray()
-
-    # create function set and get points in world space
-    currentInMeshMFnMesh = OpenMaya.MFnMesh(dagPath)
-    currentInMeshMFnMesh.getPoints(inMeshMPointArray, OpenMaya.MSpace.kWorld)
 
     cmds.select(mesh_name)
     number_of_faces = cmds.polyEvaluate(f=True)
@@ -204,12 +191,12 @@ def place_objects():
         pt = face.__apimfn__().center(OpenMaya.MSpace.kWorld)
         centerPoint = pm.datatypes.Point(pt)
 
-        # add cube to center of face
-        cmds.select("birch:birch")
 
-        tree_list.append(TreeInfo(cmds.instance("birch:birch")))
-
+        plant = cmds.textField(plant_name, query=True, text=True)
+        cmds.select(plant)
+        tree_list.append(TreeInfo(cmds.instance(plant)))
         cmds.move(centerPoint[0], centerPoint[1], centerPoint[2])
+
         tree_list[-1].update_fitness
 
 
@@ -312,8 +299,6 @@ class TreeInfo():
 
         else:
             return 0
-
-
 
 
 class Trees:
