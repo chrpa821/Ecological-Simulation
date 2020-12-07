@@ -48,9 +48,9 @@ cmds.frameLayout(collapsable=True, label="Create Environment")
 # user set environmental factors
 cmds.intSliderGrp('input_seeds', label="Amount of Seeds", field=True, min=1, max=50, value=20)
 cmds.intSliderGrp('input_age', label="Age", field=True, min=1, max=100, value=50)
-cmds.intSliderGrp('input_temp', label="Temperature", field=True, min=-10, max=40, value=10)
-cmds.floatSliderGrp('input_sun', label="Sunlight", field=True, min=0, max=1, value=0.5)
-cmds.floatSliderGrp('input_soil', label="Soil", field=True, min=0, max=1, value=0.5)
+cmds.intSliderGrp('input_temp', label="Temperature", field=True, min=-10, max=40, value=38)
+cmds.floatSliderGrp('input_sun', label="Sunlight", field=True, min=0, max=1, value=0.9)
+cmds.floatSliderGrp('input_soil', label="Soil", field=True, min=0, max=1, value=0.4)
 
 # create environment
 cmds.button(label="Create Environment", command='create_environment()')
@@ -62,11 +62,8 @@ cmds.setParent('..')
 
 cmds.frameLayout(collapsable=True, label="Placement of Plants")
 
-# increments age
-cmds.button(label="Increment Environment Age", command='Trees.increment_age(Trees.tree_list)')
-
-# place objects
-cmds.button(label="Place Objects", command='place_objects()')
+# Increment environment age
+cmds.button(label="Increment Environment Age", command='place_objects()')
 
 cmds.showWindow(myWin)
 
@@ -79,7 +76,7 @@ mesh_name = ""
 mesh_width = 0
 mesh_length = 0
 mesh_sub = 0
-initial_seeds = 20
+seeds = 20
 tree_list = []
 
 ##################
@@ -118,11 +115,41 @@ def create_environment():
 
     global my_environment # Fix
     my_environment = Environment(age, sun, temp, soil)
-    print("my environment values")
-    print(my_environment.age)
-    print(my_environment.sunlight)
-    print(my_environment.temperature)
-    print(my_environment.soil)
+
+    global seeds
+    seeds = cmds.intSliderGrp('input_seeds', query=True, value=True)
+
+def increment_age(trees):
+
+
+    global seeds
+    seeds = 0
+    for plant in trees:
+
+        plant.update_fitness()
+        print(plant.fitness)
+        # Fitness (f = 1.0)
+        # Energy (e = 1.0)
+        # Increment age (a) every t seconds
+        # Check fitness (f) in each cycle
+        # If f = 0, reduce energy (e) by energy loss (l)
+        # If e = 0, plant dies
+        # If probability (p < 0.5), reproduce offspring
+        # Reproduction based on fitness:
+        # Scatter number of seeds (s * f)
+        # at distance (d) around the parent
+        plant.age += 1
+
+        if plant.fitness <= 0:
+            plant.energy -= 0.1  # energy loss = 0.1
+
+        if plant.energy <= 0:
+            cmds.clear()
+            cmds.select(plant.instance)
+            cmds.delete()
+
+        if random.uniform(0, 1) < 0.5:
+            seeds += int(plant.seedCount * plant.fitness)
 
 
 def place_objects():
@@ -142,27 +169,18 @@ def place_objects():
     currentInMeshMFnMesh = OpenMaya.MFnMesh(dagPath)
     currentInMeshMFnMesh.getPoints(inMeshMPointArray, OpenMaya.MSpace.kWorld)
 
-    face = 1
-    my_face = "{}.f[{}]".format(mesh_name,face)
-    cmds.select(my_face)
-    print(cmds.polyInfo( fn=True ))
-
-    face = pm.MeshFace("{}.f[{}]".format(mesh_name,face))
-    pt = face.__apimfn__().center(OpenMaya.MSpace.kWorld)
-    centerPoint = pm.datatypes.Point(pt)
-    print(centerPoint)
-
     cmds.select(mesh_name)
     number_of_faces = cmds.polyEvaluate(f=True)
-    print(number_of_faces)
 
     # we're comparing with up
     comparisonVector = OpenMaya.MVector(0, 1, 0)
 
-    global initial_seeds
-    initial_seeds = cmds.intSliderGrp('input_seeds', query=True, value=True)
+    if len(tree_list) != 0:
+        increment_age(tree_list)
 
-    for x in range(initial_seeds):
+    global seeds
+    #print(seeds)
+    for x in range(seeds):
         place = random.randint(0, number_of_faces)
         face = pm.MeshFace("{}.f[{}]".format(mesh_name, place))
 
@@ -173,7 +191,7 @@ def place_objects():
         polyInfoX = float(polyInfoArray[2])
         polyInfoY = float(polyInfoArray[3])
         polyInfoZ = float(polyInfoArray[4])
-        face_normal = OpenMaya.MVector(polyInfoX, polyInfoY, polyInfoX)
+        face_normal = OpenMaya.MVector(polyInfoX, polyInfoY, polyInfoZ)
 
         deltaAngle = math.degrees(face_normal.angle(comparisonVector))
 
@@ -186,12 +204,13 @@ def place_objects():
         pt = face.__apimfn__().center(OpenMaya.MSpace.kWorld)
         centerPoint = pm.datatypes.Point(pt)
 
-        print(centerPoint)
-
         # add cube to center of face
-        cmds.select("birch:birch1")
-        cmds.instance("birch:birch1")
+        cmds.select("birch:birch")
+
+        tree_list.append(TreeInfo(cmds.instance("birch:birch")))
+
         cmds.move(centerPoint[0], centerPoint[1], centerPoint[2])
+        tree_list[-1].update_fitness
 
 
 ##################
@@ -200,13 +219,12 @@ def place_objects():
 
 
 #Generic tree
-class TreeInfo:
+class TreeInfo():
 
-    def __init__(self):
-        self.name = "tree"
+    def __init__(self, instance):
         self.energy = 1.0
         self.fitness = 1.0
-        self.currentAge = 1
+        self.age = 1
         self.maxAge = 30
         self.reproductionAge = 3
         self.seedCount = 5
@@ -219,10 +237,7 @@ class TreeInfo:
         self.soilPreferred = 0.4
         self.soilLower = 0.0
         self.soilUpper = 0.6
-        self.spacePreferred = 0.2
-        self.spaceLower = 0.0
-        self.spaceUpper = 0.3
-
+        self.instance = instance
 
     def update_fitness(self):
         self.fitness = self.compute_soil_adaptability() * self.compute_sun_adaptability() * self.compute_temp_adaptability()
@@ -308,33 +323,11 @@ class Trees:
         self.tree_list = tree_list
         self.soil_value = soil_value
 
-    #
-    # def increment_age(self, tree_list):
-    #     for plants in tree_list:
-    #         # Fitness (f = 1.0)
-    #         # Energy (e = 1.0)
-    #         # Increment age (a) every t seconds
-    #         # Check fitness (f) in each cycle
-    #         # If f = 0, reduce energy (e) by energy loss (l)
-    #         # If e = 0, plant dies
-    #         # If probability (p < 0.5), reproduce offspring
-    #         # Reproduction based on fitness:
-    #         # Scatter number of seeds (s * f)
-    #         # at distance (d) around the parent
-    #         plants.age += 1
-    #         if plants.fitness == 0:
-    #             plants.energy -= 0.1  # energy loss = 0.1
-    #         if plants.energy == 0:
-    #             # plant dies
-    #
-    #         if random.uniform(0, 1) < 0.5:
-    #             # reproduce offspring
-    #             # scatter seeds (plants.seeds*plants.fitness) at distance d around plant
 
 class Environment:
     def __init__(self, age, light, temperature, soil):
         self.age = age
-        self.sunlight = light
+        self.sun = light
         self.temperature = temperature
         self.soil = soil # fix soil value based on map
 
