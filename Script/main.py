@@ -126,7 +126,7 @@ def increment_age(trees):
 
     global seeds
     seeds = 0
-    for plant in trees:
+    for plant in trees[:]:
 
         plant.update_fitness()
         print(plant.fitness)
@@ -143,12 +143,21 @@ def increment_age(trees):
         plant.age += 1
 
         if plant.fitness <= 0:
-            plant.energy -= 0.1  # energy loss = 0.1
+            plant.energy -= 0.6  # energy loss = 0.1
 
         if plant.energy <= 0:
-            cmds.clear()
+
             cmds.select(plant.instance)
             cmds.delete()
+            trees.remove(plant)
+
+        if plant.age >= 100:
+
+            cmds.select(plant.instance)
+            cmds.delete()
+            trees.remove(plant)
+
+        print(plant.fitness)
 
         if random.uniform(0, 1) < 0.5:
             seeds += int(plant.seedCount * plant.fitness)
@@ -227,8 +236,33 @@ class TreeInfo():
         self.instance = instance
 
     def update_fitness(self):
-        self.fitness = self.compute_soil_adaptability() * self.compute_sun_adaptability() * self.compute_temp_adaptability()
+        global my_environment
+        self.fitness = self.compute_adaptability(self.soilPreferred, self.soilLower, self.soilUpper,
+                                                 my_environment.soil)\
+                       * self.compute_adaptability(self.sunlightPreferred, self.sunlightLower, self.sunlightUpper,
+                                                   my_environment.sun) \
+                       * self.compute_adaptability(self.temperaturePreferred, self.temperatureLower,
+                                                   self.temperatureUpper, my_environment.temperature)
 
+    def compute_adaptability(self, preferred, lower, upper, environment):
+
+        if preferred - 0.5*(abs(preferred - lower)) <= environment <= preferred + 0.5 * (abs(preferred - upper)):
+            return 1.0
+
+        elif preferred + 0.5*(abs(preferred - upper)) < environment <= upper:
+            temp = -((1/(
+                abs(upper - preferred + 0.5*abs(preferred - upper))))*abs(
+                environment - preferred + 0.5*abs(preferred - upper))) + 1.0
+            return temp
+
+        elif lower <= environment < preferred - 0.5*abs(preferred - lower):
+            temp = -((1/(
+                abs(lower - preferred - 0.5*abs(preferred - lower))))*abs(
+                environment - preferred - 0.5*abs(preferred - upper))) + 1.0
+            return temp
+
+        else:
+            return 0
 
     def compute_soil_adaptability(self):
 
@@ -279,22 +313,22 @@ class TreeInfo():
 
     def compute_temp_adaptability(self):
         if self.temperaturePreferred - 0.5 * (
-        abs(self.temperaturePreferred - self.temperatureLower)) <= my_environment.sun <= self.temperaturePreferred + 0.5 * (
+        abs(self.temperaturePreferred - self.temperatureLower)) <= my_environment.temperature <= self.temperaturePreferred + 0.5 * (
         abs(self.temperaturePreferred - self.temperatureUpper)):
             return 1.0
 
         elif self.temperaturePreferred + 0.5 * (
-        abs(self.temperaturePreferred - self.temperatureUpper)) < my_environment.sun <= self.temperatureUpper:
+        abs(self.temperaturePreferred - self.temperatureUpper)) < my_environment.temperature <= self.temperatureUpper:
             temp = -((1 / (
                 abs(self.temperatureUpper - self.temperaturePreferred + 0.5 * abs(self.temperaturePreferred - self.temperatureUpper)))) * abs(
-                my_environment.sun - self.temperaturePreferred + 0.5 * abs(self.temperaturePreferred - self.temperatureUpper))) + 1.0
+                my_environment.temperature - self.temperaturePreferred + 0.5 * abs(self.temperaturePreferred - self.temperatureUpper))) + 1.0
             return temp
 
-        elif self.temperatureLower <= my_environment.sun < self.temperaturePreferred - 0.5 * abs(
+        elif self.temperatureLower <= my_environment.temperature < self.temperaturePreferred - 0.5 * abs(
                 self.temperaturePreferred - self.temperatureLower):
             temp = -((1 / (
                 abs(self.temperatureLower - self.temperaturePreferred - 0.5 * abs(self.temperaturePreferred - self.temperatureLower)))) * abs(
-                my_environment.sun - self.temperaturePreferred - 0.5 * abs(self.temperaturePreferred - self.temperatureUpper))) + 1.0
+                my_environment.temperature - self.temperaturePreferred - 0.5 * abs(self.temperaturePreferred - self.temperatureUpper))) + 1.0
             return temp
 
         else:
