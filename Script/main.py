@@ -49,7 +49,7 @@ cmds.frameLayout(collapsable=True, label="Create Environment")
 cmds.text( label='Plant Mesh name (full name):' )
 plant_name = cmds.textField()
 cmds.intSliderGrp('input_seeds', label="Amount of Seeds", field=True, min=1, max=50, value=20)
-cmds.intSliderGrp('input_age', label="Age", field=True, min=1, max=100, value=50)
+cmds.intSliderGrp('input_angle', label="Slope Threshold in degrees", field=True, min=0, max=90, value=20)
 cmds.intSliderGrp('input_temp', label="Temperature", field=True, min=-10, max=40, value=38)
 cmds.floatSliderGrp('input_sun', label="Sunlight", field=True, min=0, max=1, value=0.9)
 cmds.floatSliderGrp('input_soil', label="Soil", field=True, min=0, max=1, value=0.4)
@@ -79,6 +79,8 @@ mesh_width = 0
 mesh_length = 0
 mesh_sub = 0
 seeds = 20
+angle = 20
+
 tree_list = []
 
 ##################
@@ -110,13 +112,12 @@ def create_plane():
 
 def create_environment():
 
-    age = cmds.intSliderGrp('input_age', query=True, value=True)
     temp = cmds.intSliderGrp('input_temp', query=True, value=True)
     sun = cmds.floatSliderGrp('input_sun', query=True, value=True)
     soil = cmds.floatSliderGrp('input_soil', query=True, value=True)
 
     global my_environment # Fix
-    my_environment = Environment(age, sun, temp, soil)
+    my_environment = Environment(sun, temp, soil)
 
     global seeds
     seeds = cmds.intSliderGrp('input_seeds', query=True, value=True)
@@ -193,7 +194,9 @@ def place_objects():
 
         # the angle is in degrees so the result is
         # "if the difference between this normal and 'up' is more then 20 degrees, turn the point off"
-        if abs(deltaAngle) > 10:
+        global angle
+        angle = cmds.intSliderGrp('input_angle', query=True, value=True)
+        if abs(deltaAngle) > angle:
             continue
 
         # Get center of face
@@ -274,8 +277,7 @@ class Trees:
 
 
 class Environment:
-    def __init__(self, age, light, temperature, soil):
-        self.age = age
+    def __init__(self, light, temperature, soil):
         self.sun = light
         self.temperature = temperature
         self.soil = soil # fix soil value based on map
